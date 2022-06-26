@@ -7,7 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 
 public class Main {
     public static void main(String[] args) {
-        //Test first commit
+        //Test first commit2
         MVCContext mvcContext = new MVCContext("edu.cscc.controllers");
         try {
             mvcContext.processRequest(new Request("Home", "index"));
