@@ -31,7 +31,7 @@ public class OrdersController extends ApplicationController {
         properties.setProperty(MYSQL_DB_USERNAME, "root");
         properties.setProperty(MYSQL_DB_PASSWORD, "password");
         DataSource dataSource = DataSourceFactory.buildDataSource(properties);
-        LacklusterVideoRepositoryImpl lacklusterVideoRepository = new LacklusterVideoRepositoryImpl(dataSource);
+        lacklusterVideoRepository = new LacklusterVideoRepositoryImpl(dataSource);
 
     }
 
