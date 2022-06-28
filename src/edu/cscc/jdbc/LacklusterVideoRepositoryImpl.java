@@ -38,17 +38,19 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
     public List<Order> getOrders() throws LacklusterVideoServiceException {
         List<Order> orders = new ArrayList<>();
                 try {
-            String sql = "select o.* from orders o,"
-                    + "inner join employees emp on o.id = emp.id"
-                    + "inner join customers c on o.id = emp.id";
+            String sql = "select * from orders,"
+                    + "inner join employees on orders.id = employees.id"
+                    + "inner join customers on orders.id = employees.id";
             Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 int orderId = resultSet.getInt(1);
-                String storeNumber = resultSet.getString(2);
+                Employee employee = new Employee(resultSet.getString(6),resultSet.getString(7),resultSet.getString(8));
+                Customer customer = new Customer(resultSet.getString(10),resultSet.getString(11),resultSet.getString(12));
+                String storeNumber = resultSet.getString(4);
 //              Order(Integer id, Employee employee, Customer customer, String storeNumber)
-                Order order = new Order(orderId, name);
+                Order order = new Order(orderId, employee, customer, storeNumber);
                 orders.add(order);
             }
 
