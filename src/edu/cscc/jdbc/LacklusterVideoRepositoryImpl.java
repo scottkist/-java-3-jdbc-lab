@@ -37,10 +37,10 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
     @Override
     public List<Order> getOrders() throws LacklusterVideoServiceException {
         List<Order> orders = new ArrayList<>();
-                try {
-                    String sql = "SELECT * from lackluster_video.orders\n" +
-                            "INNER JOIN lackluster_video.employees on lackluster_video.orders.employee_id = lackluster_video.employees.id\n" +
-                            "INNER JOIN lackluster_video.customers on lackluster_video.orders.customer_id = lackluster_video.customers.id";
+        try {
+            String sql = "SELECT * from lackluster_video.orders\n" +
+                    "INNER JOIN lackluster_video.employees on lackluster_video.orders.employee_id = lackluster_video.employees.id\n" +
+                    "INNER JOIN lackluster_video.customers on lackluster_video.orders.customer_id = lackluster_video.customers.id";
             Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -61,24 +61,37 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
         return orders;
     }
 
-
+//working on this. not sure how to do this yet.
     @Override
     public void createOrder(Integer employeeId, Integer customerId, List<Integer> rentalIds) throws LacklusterVideoServiceException {
-
+        try {
+            String sql = "insert into lackluster_video.orders (employee_id, customer_id, store_number) values (1, 2, '3');";
+            Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1,employeeId);
+            preparedStatement.setInt(2,customerId);
+            preparedStatement.setString();
+//            ResultSet resultSet = preparedStatement.executeQuery();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new LacklusterVideoServiceException("Could not create order");
+        }
     }
 
     @Override
     public void deleteOrders() throws LacklusterVideoServiceException {
-//        try {
-//            String sql = "delete from orders o where o.id = ?";
-//            Connection connection = dataSource.getConnection();
-//            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-//            preparedStatement.setInt(1,id);
-//            int rows = preparedStatement.executeUpdate();
-//        } catch (SQLException exception) {
-//            exception.printStackTrace();
-//            throw new LacklusterVideoServiceException("Could not delete company.");
-//        }
+        try {
+            String sqlDeleteOrderLi = "delete from order_line_items";
+            String sqlDeleteOrders = "delete from orders";
+            Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(sqlDeleteOrderLi);
+            preparedStatement.executeUpdate();
+            PreparedStatement preparedStatement2 = connection.prepareStatement(sqlDeleteOrders);
+            preparedStatement.executeUpdate();
+        } catch (SQLException exception) {
+            exception.printStackTrace();
+            throw new LacklusterVideoServiceException("Could not delete orders.");
+        }
     }
 
 }
