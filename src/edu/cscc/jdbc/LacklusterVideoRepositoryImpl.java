@@ -4,28 +4,13 @@ import edu.cscc.exceptions.LacklusterVideoServiceException;
 import edu.cscc.models.Customer;
 import edu.cscc.models.Employee;
 import edu.cscc.models.Order;
+import edu.cscc.models.OrderLineItem;
 import edu.cscc.services.LacklusterVideoRepository;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-//
-//Order:
-//        **************
-//        Order ID: 5
-//        Employee Name: Wynter Miller
-//        Customer Smart ID: 23945808497
-//        Customer Name: Dibbert Dibbert
-//        Store Number: 39458
-//        Rental Name: The Godfather
-//        Rental Name: The Shawshank Redemption
-//
-//        If no orders exist the application displays:
-//        No orders found.
 
 public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository {
     private final DataSource dataSource;
@@ -37,20 +22,32 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
     @Override
     public List<Order> getOrders() throws LacklusterVideoServiceException {
         List<Order> orders = new ArrayList<>();
+        List<OrderLineItem> orderLineItemsTempList = new ArrayList<>();
         try {
-            String sql = "SELECT * from lackluster_video.orders\n" +
-                    "INNER JOIN lackluster_video.employees on lackluster_video.orders.employee_id = lackluster_video.employees.id\n" +
-                    "INNER JOIN lackluster_video.customers on lackluster_video.orders.customer_id = lackluster_video.customers.id";
+            String sql = "SELECT o.id, o.store_number, e.id, e.first_name, e.last_name, e.active_store_number,c.id, c.first_name, c.last_name, c.smart_id from lackluster_video.orders o\n" +
+                    "INNER JOIN lackluster_video.employees e ON o.employee_id = e.id\n" +
+                    "INNER JOIN lackluster_video.customers c ON o.customer_id = c.id";
             Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-                int orderId = resultSet.getInt(1);
-                Employee employee = new Employee(resultSet.getString(6),resultSet.getString(7),resultSet.getString(8));
-                Customer customer = new Customer(resultSet.getString(10),resultSet.getString(11),resultSet.getString(12));
-                String storeNumber = resultSet.getString(4);
+                int orderId = resultSet.getInt("o.id");
+                Employee employee = new Employee(resultSet.getString("e.first_name"),resultSet.getString("e.last_name"),resultSet.getString("e.active_store_number"));
+                Customer customer = new Customer(resultSet.getString("c.first_name"),resultSet.getString("c.last_name"),resultSet.getString("c.smart_id"));
+                String storeNumber = resultSet.getString("o.store_number");
                 Order order = new Order(orderId, employee, customer, storeNumber);
                 orders.add(order);
+                //populate OrderLineItems
+                String sqlSelectOrderLineItems = "SELECT ol.id, ol.order_id, ol.rental_id FROM lackluster_video.order_line_items ol";
+                PreparedStatement preparedStatement2 = connection.prepareStatement(sqlSelectOrderLineItems);
+                ResultSet resultSet2 = preparedStatement2.executeQuery();
+                int orderLineItemId = resultSet2.getInt("ol.id");
+                int oLiOrderId = resultSet2.getInt("ol.order_id");
+                int oLiRentalId = resultSet2.getInt("ol.rental_id");
+                //TODO: Need to create a Rental Object...
+//                OrderLineItem orderLineItem = new OrderLineItem(orderLineItemId, oLiOrderId, oLiRentalId);
+                order.setOrderLineItems(orderLineItemsTempList);
+
             }
 
         } catch (SQLException exception) {
@@ -65,12 +62,14 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
     @Override
     public void createOrder(Integer employeeId, Integer customerId, List<Integer> rentalIds) throws LacklusterVideoServiceException {
         try {
-            String sql = "insert into lackluster_video.orders (employee_id, customer_id, store_number) values (1, 2, '3');";
+            String sql = "insert into lackluster_video.orders (employee_id, customer_id, store_number) values (?, ?, ?)";
             Connection connection = dataSource.getConnection();
+            connection.setAutoCommit(false);
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setInt(1,employeeId);
             preparedStatement.setInt(2,customerId);
-            preparedStatement.setString();
+//            preparedStatement.setString(3, activeStore);
+
 //            ResultSet resultSet = preparedStatement.executeQuery();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -81,13 +80,14 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
     @Override
     public void deleteOrders() throws LacklusterVideoServiceException {
         try {
-            String sqlDeleteOrderLi = "delete from order_line_items";
+            String sqlDeleteOrderLineItems = "delete from order_line_items";
             String sqlDeleteOrders = "delete from orders";
             Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlDeleteOrderLi);
+            PreparedStatement preparedStatement = connection.prepareStatement(sqlDeleteOrderLineItems);
             preparedStatement.executeUpdate();
             PreparedStatement preparedStatement2 = connection.prepareStatement(sqlDeleteOrders);
-            preparedStatement.executeUpdate();
+            preparedStatement2.executeUpdate();
+            connection.commit();
         } catch (SQLException exception) {
             exception.printStackTrace();
             throw new LacklusterVideoServiceException("Could not delete orders.");
