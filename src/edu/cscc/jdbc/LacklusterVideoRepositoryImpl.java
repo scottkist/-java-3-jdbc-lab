@@ -34,23 +34,27 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
                 String storeNumber = resultSet.getString("o.store_number");
                 Order order = new Order(orderId, employee, customer, storeNumber);
                 orders.add(order);
-                //Populate OrderLineItems
-                String sqlSelectOrderLineItems = "SELECT ol.id, ol.order_id, ol.rental_id, r.id, r.name FROM lackluster_video.order_line_items ol\n" +
-                        "INNER JOIN lackluster_video.rentals r ON ol.rental_id = r.id";
+
+                String sqlSelectOrderLineItems = "SELECT order_line_items.id, order_line_items.order_id, order_line_items.rental_id, rentals.name\n" +
+                        "FROM lackluster_video.orders\n" +
+                        "INNER JOIN order_line_items on orders.id = order_line_items.order_id\n" +
+                        "INNER JOIN rentals on order_line_items.rental_id = rentals.id\n" +
+                        "where orders.id = ?;";
                 PreparedStatement preparedStatement2 = connection.prepareStatement(sqlSelectOrderLineItems);
+                preparedStatement2.setInt(1, orderId);
                 ResultSet resultSet2 = preparedStatement2.executeQuery();
                 while (resultSet2.next()) {
-                    int orderLineItemId = resultSet2.getInt("ol.id");
-                    int oLiOrderId = resultSet2.getInt("ol.order_id");
-                    int oLiRentalId = resultSet2.getInt("ol.rental_id");
-                    String rentalName = resultSet2.getString("r.name");
+                    int oLiId = resultSet2.getInt("order_line_items.id");
+                    int oLiOrderId = resultSet2.getInt("order_line_items.order_id");
+                    int oLiRentalId = resultSet2.getInt("order_line_items.rental_id");
+                    String rentalName = resultSet2.getString("rentals.name");
                     Rental rentalObject = new Rental(oLiRentalId, rentalName);
-                    OrderLineItem orderLineItem = new OrderLineItem(orderLineItemId, oLiOrderId, rentalObject);
+                    OrderLineItem orderLineItem = new OrderLineItem(oLiId, oLiOrderId, rentalObject);
                     orderLineItemsTempList.add(orderLineItem);
-                    order.setOrderLineItems(orderLineItemsTempList);
                 }
+                order.setOrderLineItems(orderLineItemsTempList);
+                orderLineItemsTempList = new ArrayList<>();
             }
-
         } catch (SQLException exception) {
             exception.printStackTrace();
             throw new LacklusterVideoServiceException("Could not retrieve orders");
