@@ -29,27 +29,27 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 int orderId = resultSet.getInt("o.id");
-                Employee employee = new Employee(resultSet.getString("e.first_name"),resultSet.getString("e.last_name"),resultSet.getString("e.active_store_number"));
-                Customer customer = new Customer(resultSet.getString("c.first_name"),resultSet.getString("c.last_name"),resultSet.getString("c.smart_id"));
+                Employee employee = new Employee(resultSet.getString("e.first_name"), resultSet.getString("e.last_name"), resultSet.getString("e.active_store_number"));
+                Customer customer = new Customer(resultSet.getString("c.first_name"), resultSet.getString("c.last_name"), resultSet.getString("c.smart_id"));
                 String storeNumber = resultSet.getString("o.store_number");
                 Order order = new Order(orderId, employee, customer, storeNumber);
                 orders.add(order);
-                //populate OrderLineItems
+                //Populate OrderLineItems
                 String sqlSelectOrderLineItems = "SELECT ol.id, ol.order_id, ol.rental_id, r.id, r.name FROM lackluster_video.order_line_items ol\n" +
                         "INNER JOIN lackluster_video.rentals r ON ol.rental_id = r.id";
                 PreparedStatement preparedStatement2 = connection.prepareStatement(sqlSelectOrderLineItems);
                 ResultSet resultSet2 = preparedStatement2.executeQuery();
                 while (resultSet2.next()) {
-                int orderLineItemId = resultSet2.getInt("ol.id");
-                int oLiOrderId = resultSet2.getInt("ol.order_id");
-                int oLiRentalId = resultSet2.getInt("ol.rental_id");
-                String rentalName = resultSet2.getString("r.name");
-                Rental rentalObject = new Rental(oLiRentalId,rentalName);
-                OrderLineItem orderLineItem = new OrderLineItem(orderLineItemId, oLiOrderId, rentalObject);
-                orderLineItemsTempList.add(orderLineItem);
-                order.setOrderLineItems(orderLineItemsTempList);
-
-            } }
+                    int orderLineItemId = resultSet2.getInt("ol.id");
+                    int oLiOrderId = resultSet2.getInt("ol.order_id");
+                    int oLiRentalId = resultSet2.getInt("ol.rental_id");
+                    String rentalName = resultSet2.getString("r.name");
+                    Rental rentalObject = new Rental(oLiRentalId, rentalName);
+                    OrderLineItem orderLineItem = new OrderLineItem(orderLineItemId, oLiOrderId, rentalObject);
+                    orderLineItemsTempList.add(orderLineItem);
+                    order.setOrderLineItems(orderLineItemsTempList);
+                }
+            }
 
         } catch (SQLException exception) {
             exception.printStackTrace();
@@ -59,19 +59,36 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
         return orders;
     }
 
-//working on this. not sure how to do this yet.
     @Override
     public void createOrder(Integer employeeId, Integer customerId, List<Integer> rentalIds) throws LacklusterVideoServiceException {
+//        Order(Integer id, Employee employee, Customer customer, String storeNumber)
+        String defaultStoreNumber = "39458";
         try {
             String sql = "insert into lackluster_video.orders (employee_id, customer_id, store_number) values (?, ?, ?)";
             Connection connection = dataSource.getConnection();
             connection.setAutoCommit(false);
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setInt(1,employeeId);
-            preparedStatement.setInt(2,customerId);
-//            preparedStatement.setString(3, activeStore);
+            preparedStatement.setInt(1, employeeId);
+            preparedStatement.setInt(2, customerId);
+            preparedStatement.setString(3, defaultStoreNumber);
+            preparedStatement.executeUpdate();
+            connection.commit();  //this may not be the right spot for this. need to test.   --ORDER IS CREATED NOW--
+            //Need to then query for the Order id to get create OrderLineItems..
 
-//            ResultSet resultSet = preparedStatement.executeQuery();
+
+            //TODO: OrderLineItems (id, order_id, rental_id)
+            String queryForOrderId = "SELECT id FROM lackluster_video.orders ORDER BY id DESC LIMIT 1";
+            PreparedStatement preparedStatementOrderLineItem = connection.prepareStatement(queryForOrderId);
+            ResultSet resultSet = preparedStatementOrderLineItem.executeQuery();
+            while (resultSet.next()) {
+                int orderId = resultSet.getInt("id");
+                String sqlCreateOLI = "insert into lackluster_video.order_line_items (id, order_id, rental_id) values (?, ?, ?)";
+                PreparedStatement addToOrderLineItemsTable = connection.prepareStatement(sqlCreateOLI);
+//                addToOrderLineItemsTable.setInt(1,);
+//                addToOrderLineItemsTable.setInt(2,);
+//                addToOrderLineItemsTable.setInt(3,);
+            }
+
         } catch (SQLException e) {
             e.printStackTrace();
             throw new LacklusterVideoServiceException("Could not create order");
@@ -84,6 +101,7 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
             String sqlDeleteOrderLineItems = "delete from order_line_items";
             String sqlDeleteOrders = "delete from orders";
             Connection connection = dataSource.getConnection();
+            connection.setAutoCommit(false);
             PreparedStatement preparedStatement = connection.prepareStatement(sqlDeleteOrderLineItems);
             preparedStatement.executeUpdate();
             PreparedStatement preparedStatement2 = connection.prepareStatement(sqlDeleteOrders);
