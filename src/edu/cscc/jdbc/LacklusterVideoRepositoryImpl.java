@@ -82,11 +82,14 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
             ResultSet resultSet = preparedStatementOrderLineItem.executeQuery();
             while (resultSet.next()) {
                 int orderId = resultSet.getInt("id");
-                String sqlCreateOLI = "insert into lackluster_video.order_line_items (id, order_id, rental_id) values (?, ?, ?)";
-                PreparedStatement addToOrderLineItemsTable = connection.prepareStatement(sqlCreateOLI);
-//                addToOrderLineItemsTable.setInt(1,);
-//                addToOrderLineItemsTable.setInt(2,);
-//                addToOrderLineItemsTable.setInt(3,);
+                for (Integer rentalId : rentalIds) {
+                    System.out.println("test");
+//                    String sqlCreateOLI = "insert into lackluster_video.order_line_items (order_id, rental_id) values (?, ?)";
+//                    PreparedStatement addToOrderLineItemsTable = connection.prepareStatement(sqlCreateOLI);
+//                    addToOrderLineItemsTable.setInt(1, orderId);
+//                    addToOrderLineItemsTable.setInt(2, rentalId);
+                }
+
             }
 
         } catch (SQLException e) {
