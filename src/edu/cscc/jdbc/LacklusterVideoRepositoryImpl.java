@@ -1,10 +1,7 @@
 package edu.cscc.jdbc;
 
 import edu.cscc.exceptions.LacklusterVideoServiceException;
-import edu.cscc.models.Customer;
-import edu.cscc.models.Employee;
-import edu.cscc.models.Order;
-import edu.cscc.models.OrderLineItem;
+import edu.cscc.models.*;
 import edu.cscc.services.LacklusterVideoRepository;
 
 import javax.sql.DataSource;
@@ -38,17 +35,21 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
                 Order order = new Order(orderId, employee, customer, storeNumber);
                 orders.add(order);
                 //populate OrderLineItems
-                String sqlSelectOrderLineItems = "SELECT ol.id, ol.order_id, ol.rental_id FROM lackluster_video.order_line_items ol";
+                String sqlSelectOrderLineItems = "SELECT ol.id, ol.order_id, ol.rental_id, r.id, r.name FROM lackluster_video.order_line_items ol\n" +
+                        "INNER JOIN lackluster_video.rentals r ON ol.rental_id = r.id";
                 PreparedStatement preparedStatement2 = connection.prepareStatement(sqlSelectOrderLineItems);
                 ResultSet resultSet2 = preparedStatement2.executeQuery();
+                while (resultSet2.next()) {
                 int orderLineItemId = resultSet2.getInt("ol.id");
                 int oLiOrderId = resultSet2.getInt("ol.order_id");
                 int oLiRentalId = resultSet2.getInt("ol.rental_id");
-                //TODO: Need to create a Rental Object...
-//                OrderLineItem orderLineItem = new OrderLineItem(orderLineItemId, oLiOrderId, oLiRentalId);
+                String rentalName = resultSet2.getString("r.name");
+                Rental rentalObject = new Rental(oLiRentalId,rentalName);
+                OrderLineItem orderLineItem = new OrderLineItem(orderLineItemId, oLiOrderId, rentalObject);
+                orderLineItemsTempList.add(orderLineItem);
                 order.setOrderLineItems(orderLineItemsTempList);
 
-            }
+            } }
 
         } catch (SQLException exception) {
             exception.printStackTrace();
