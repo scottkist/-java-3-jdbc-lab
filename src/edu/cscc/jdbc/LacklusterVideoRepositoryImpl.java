@@ -39,9 +39,9 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
                         "INNER JOIN order_line_items on orders.id = order_line_items.order_id\n" +
                         "INNER JOIN rentals on order_line_items.rental_id = rentals.id\n" +
                         "where orders.id = ?;";
-                PreparedStatement preparedStatement2 = connection.prepareStatement(sqlSelectOrderLineItems);
-                preparedStatement2.setInt(1, orderId);
-                ResultSet resultSet2 = preparedStatement2.executeQuery();
+                PreparedStatement preparedStatementSelectOrderLineItems = connection.prepareStatement(sqlSelectOrderLineItems);
+                preparedStatementSelectOrderLineItems.setInt(1, orderId);
+                ResultSet resultSet2 = preparedStatementSelectOrderLineItems.executeQuery();
                 while (resultSet2.next()) {
                     int oLiId = resultSet2.getInt("order_line_items.id");
                     int oLiOrderId = resultSet2.getInt("order_line_items.order_id");
