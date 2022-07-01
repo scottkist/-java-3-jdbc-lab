@@ -34,7 +34,6 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
                 String storeNumber = resultSet.getString("o.store_number");
                 Order order = new Order(orderId, employee, customer, storeNumber);
                 orders.add(order);
-
                 String sqlSelectOrderLineItems = "SELECT order_line_items.id, order_line_items.order_id, order_line_items.rental_id, rentals.name\n" +
                         "FROM lackluster_video.orders\n" +
                         "INNER JOIN order_line_items on orders.id = order_line_items.order_id\n" +
@@ -65,7 +64,6 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
 
     @Override
     public void createOrder(Integer employeeId, Integer customerId, List<Integer> rentalIds) throws LacklusterVideoServiceException {
-//        Order(Integer id, Employee employee, Customer customer, String storeNumber)
         String defaultStoreNumber = "39458";
         try {
             String sql = "insert into lackluster_video.orders (employee_id, customer_id, store_number) values (?, ?, ?)";
@@ -76,24 +74,19 @@ public class LacklusterVideoRepositoryImpl implements LacklusterVideoRepository 
             preparedStatement.setInt(2, customerId);
             preparedStatement.setString(3, defaultStoreNumber);
             preparedStatement.executeUpdate();
-            connection.commit();  //this may not be the right spot for this. need to test.   --ORDER IS CREATED NOW--
-            //Need to then query for the Order id to get create OrderLineItems..
-
-
-            //TODO: OrderLineItems (id, order_id, rental_id)
+            connection.commit();
             String queryForOrderId = "SELECT id FROM lackluster_video.orders ORDER BY id DESC LIMIT 1";
             PreparedStatement preparedStatementOrderLineItem = connection.prepareStatement(queryForOrderId);
             ResultSet resultSet = preparedStatementOrderLineItem.executeQuery();
             while (resultSet.next()) {
                 int orderId = resultSet.getInt("id");
-                for (Integer rentalId : rentalIds) {
-                    System.out.println("test");
-//                    String sqlCreateOLI = "insert into lackluster_video.order_line_items (order_id, rental_id) values (?, ?)";
-//                    PreparedStatement addToOrderLineItemsTable = connection.prepareStatement(sqlCreateOLI);
-//                    addToOrderLineItemsTable.setInt(1, orderId);
-//                    addToOrderLineItemsTable.setInt(2, rentalId);
+                for (int i = 0; i < rentalIds.size(); i++) {
+                    String sqlCreateOLI = "insert into lackluster_video.order_line_items (order_id, rental_id) values (?, ?)";
+                    PreparedStatement addToOrderLineItemsTable = connection.prepareStatement(sqlCreateOLI);
+                    addToOrderLineItemsTable.setInt(1, orderId);
+                    addToOrderLineItemsTable.setInt(2, rentalIds.get(i));
+                    addToOrderLineItemsTable.executeUpdate();
                 }
-
             }
 
         } catch (SQLException e) {
